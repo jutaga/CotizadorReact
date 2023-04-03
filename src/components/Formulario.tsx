@@ -1,11 +1,13 @@
 import { useState } from "react"
-import { obtenerDiferencia } from "../helper";
+import { calcularMarca, obtenerDiferencia, obtenerPlan } from "../helper";
+import { ErrorAlert } from "./ErrorAlert";
+import { Form, ResumenCotizacion } from "../type";
 
-interface Form {
-    marca: string,
-    year: string,
-    plan: string,
+interface PropsForm {
+    guardarResumen: React.Dispatch<React.SetStateAction<ResumenCotizacion>>;
+    cargando: React.Dispatch<React.SetStateAction<boolean>>;
 }
+
 
 const initialState = {
     marca: '',
@@ -14,7 +16,7 @@ const initialState = {
 }
 
 
-export const Formulario = () => {
+export const Formulario = ({ guardarResumen, cargando }: PropsForm) => {
 
     const [datos, setDatos] = useState<Form>(initialState);
     const [error, setError] = useState<boolean>(false);
@@ -51,35 +53,47 @@ export const Formulario = () => {
         //Obtener la diferencia de años
         const diferenciaYear: number = obtenerDiferencia(year);
 
-        console.log(diferenciaYear);
-        
-
-
         //Por cada año hay que restar el 3%
+        resultado -= ((diferenciaYear * 3) * resultado) / 100;
 
         //Americano 1%
         //Asiatico 5%
         //Europeo 30%
+        resultado = calcularMarca(marca) * resultado;
 
 
         //Planes
         //Basico aumenta 20%
         //Completo 50%
+        const incrementoPlan: number = obtenerPlan(plan);
+        resultado = parseFloat((incrementoPlan * resultado).toFixed(2));
 
-        //Total
+        cargando(true);
+
+        setTimeout(() => {
+
+            //Eliminar el spinner
+            cargando(false);
+            
+            //Total
+            guardarResumen({
+                cotizacion: resultado,
+                datos: datos
+            })
+
+        }, 3000);
+
+
 
     }
 
     return (
-        <form className="bg-light p-5" onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit}>
 
             {
-                error && <div className="alert alert-secondary">
-                    Todos los campos son Obligatorios
-                </div>
+                error && <ErrorAlert msj={'Todos los campos son Obligatorios'} />
 
             }
-
 
             <div className="row mb-2">
                 <div className="col-md-2">
@@ -104,6 +118,8 @@ export const Formulario = () => {
                 <div className="col-md-10">
                     <select onChange={handleChange} name="year" value={year} className="form-select" id="year">
                         <option disabled value="">-- Seleccione --</option>
+                        <option value="2025">2025</option>
+                        <option value="2024">2024</option>
                         <option value="2023">2023</option>
                         <option value="2022">2022</option>
                         <option value="2021">2021</option>
@@ -113,9 +129,6 @@ export const Formulario = () => {
                         <option value="2017">2017</option>
                         <option value="2016">2016</option>
                         <option value="2015">2015</option>
-                        <option value="2014">2014</option>
-                        <option value="2013">2013</option>
-                        <option value="2012">2012</option>
                     </select>
                 </div>
             </div>
